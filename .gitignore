@@ -1,0 +1,6 @@
+# Real configuration and secrets never go into Git
+*.config
+*.secrets
+# Runtime files
+last-successful
+known_hosts

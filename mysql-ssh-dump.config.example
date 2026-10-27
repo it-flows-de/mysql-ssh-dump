@@ -1,0 +1,89 @@
+#===============================================================================
+# mysql-ssh-dump.config - configuration for mysql-ssh-dump.sh
+# Setup:  cp mysql-ssh-dump.config.example mysql-ssh-dump.config, edit with vi, chmod 660.
+# Syntax: sourced by bash (it is code): KEY="value", no spaces around the "=".
+#         ${SCRIPT_DIR} and ${SCRIPT_NAME} can be used in values.
+# No secrets here: credentials belong in the secrets file (SECRETS_FILE below).
+#===============================================================================
+
+# Config format version. Must match the script, otherwise it aborts (exit code 3).
+# Do not change by hand; adjust it only after following the release notes.
+CONFIG_VERSION="1"
+
+#===============================================================================
+# 1. REQUIRED - set these for every project
+#===============================================================================
+
+# SSH host that can reach the database server (e.g. the web space of a hosting
+# package). Format: host name or IP address. Example: ssh.example.com
+SSH_HOST="ssh.example.com"
+
+# SSH user on that host. Example: u12345678
+SSH_USER="u12345678"
+
+# Local directory for the dumps. It must exist (chmod 700 recommended) and should
+# be on the intended disk, the script does not create it. Example: /srv/backup/db
+DUMP_DIR="/srv/backup/db"
+
+# Databases to dump, one entry per line: "label|db_host|db_name|db_user"
+#   label    name used in the dump file names and as key in the secrets file;
+#            letters, digits and hyphen only (no underscore), unique
+#   db_host  database host as seen from the SSH host
+#   db_name  database name (letters, digits, underscore, hyphen)
+#   db_user  database user
+# The matching passwords go into DB_PASSWORDS in the secrets file.
+DB_LIST=(
+    "site1|db123456.db.example.com|db123456|dbo123456"
+    "site2|db654321.db.example.com|db654321|dbo654321"
+)
+
+#===============================================================================
+# 2. OPTIONAL - commented out means "not used"
+#===============================================================================
+
+# Private key for SSH login. Not set = password login via sshpass
+# (SSH_PASSWORD from the secrets file is used). Format: path to the private
+# key, readable by root. Example: /root/.ssh/example_backup
+#SSH_KEY="/root/.ssh/example_backup"
+
+#===============================================================================
+# 3. DEFAULTS - change only in individual cases
+# The values below are the defaults defined in the script rules.
+#===============================================================================
+
+# SSH port. Default: 22
+SSH_PORT="22"
+
+# Number of dumps to keep per database. Format: positive integer. Default: 30
+RETENTION_COUNT="30"
+
+# Options passed to mysqldump on the remote host.
+# Default: --single-transaction --no-tablespaces
+MYSQLDUMP_OPTIONS="--single-transaction --no-tablespaces"
+
+# SSH connect timeout in seconds. Default: 30
+SSH_CONNECT_TIMEOUT="30"
+
+# SSH keep-alive interval in seconds (connection is dropped after 3 missed
+# answers). Default: 15
+SSH_ALIVE_INTERVAL="15"
+
+# --- Paths: defaults from the script rules, override only if a system needs
+# --- something different.
+
+# Log file. Rotation is done by logrotate (/etc/logrotate.d/mysql-ssh-dump).
+# The directory must exist and be writable for the executing user.
+LOG_FILE="/var/log/${SCRIPT_NAME}/${SCRIPT_NAME}.log"
+
+# Marker file, written only after a fully successful run (not on --dry-run).
+# Monitored by n-sight: an alarm is raised when the file gets too old.
+MARKER_FILE="${SCRIPT_DIR}/last-successful"
+
+# Lock file to prevent parallel runs.
+LOCK_FILE="/run/lock/${SCRIPT_NAME}.lock"
+
+# Trusted SSH host key of SSH_HOST (created once with ssh-keyscan, see INSTALL.md).
+KNOWN_HOSTS_FILE="${SCRIPT_DIR}/known_hosts"
+
+# Secrets file (chmod 600, directory chmod 700), contains credentials only.
+SECRETS_FILE="/root/.secrets/${SCRIPT_NAME}.secrets"
